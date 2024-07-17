@@ -4,6 +4,7 @@
 # In[8]:
 #Test comment
 
+print("Nice!!")
 import h5py
 import pylab as plt
 
@@ -342,7 +343,7 @@ class Args:
     label_name = ['one_over_reso']
     epochs = 10
     batch_size = 10
-    lr = 0.0001
+    lr = 1e-3
 
 args = Args()
 
