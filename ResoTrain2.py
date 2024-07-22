@@ -1,106 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[8]:
-#Test comment
 
 import h5py
 import pylab as plt
-
-
-# In[9]:
-
-
-h = h5py.File("test_data/compressed12.h5","r")
-
-
-# In[10]:
-
-
-i_img = 0
-
-
-# In[11]:
-
-
-labels = list(h['labels'].attrs['names'])
-
-
-# In[12]:
-
-
-labels
-
-
-# In[13]:
-
-
-ridx = labels.index("reso")
-
-
-# In[14]:
-
-
-r = h['labels'][i_img, ridx]
-
-
-# In[15]:
-
-
-xidx = labels.index("cent_fast_train")
-
-
-# In[16]:
-
-
-yidx = labels.index("cent_slow_train")
-
-
-# In[17]:
-
-
-x,y = h['labels'][i_img,[xidx,yidx]]
-
-
-# In[18]:
-
-
-plt.imshow(h['images'][i_img,[xidx,yidx]])
-
-
-# In[19]:
-
-
-plt.plot([x],[y],'rx',ms=10)
-
-
-# In[20]:
-
-
-plt.imshow(h['images'][i_img], vmax = 20, cmap='gray_r')
-
-
-# In[21]:
-
-
-plt.plot([x],[y],'rx',ms=10)
-
-
-# In[22]:
-
-
-plt.title(f"res={r:.2f}, cent={x:.2f},{y:.2f}")
-
-
-# In[23]:
-
-
-plt.show()
-
-
-# In[24]:
-
-
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets
@@ -110,20 +13,39 @@ import h5py
 import torchvision.transforms as transforms
 import numpy as py
 import os
-import pylab as plt
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torch.nn.utils import clip_grad_norm_
+from utils import save_model, load_model, compute_losses_hdf5
+
+h = h5py.File("/data/wgoh/test_data/compressed12.h5","r")
+
+i_img = 0
+
+labels = list(h['labels'].attrs['names'])
+labels
+ridx = labels.index("reso")
+r = h['labels'][i_img, ridx]
+xidx = labels.index("cent_fast_train")
+yidx = labels.index("cent_slow_train")
+x,y = h['labels'][i_img,[xidx,yidx]]
+
+
+plt.imshow(h['images'][i_img,[xidx,yidx]])
+plt.plot([x],[y],'rx',ms=10)
+plt.imshow(h['images'][i_img], vmax = 20, cmap='gray_r')
+plt.plot([x],[y],'rx',ms=10)
+plt.title(f"res={r:.2f}, cent={x:.2f},{y:.2f}")
+plt.show()
+
 print (torch.cuda.is_available())
 print("Found %d devices" %torch.cuda.device_count())
 
 
-# In[25]:
-
-
 i_img = 0
 labels = list(h['labels'].attrs['names'])
-
-
-# In[26]:
-
 
 class wTest:
     def __init__(self, h5_file_path, label_name):
@@ -178,13 +100,6 @@ class wTest:
         plt.show()
 
 
-# In[27]:
-
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -219,17 +134,12 @@ input_tensor_batch = torch.randn(10, 1, 820, 820)
 output_batch = net(input_tensor_batch)
 print(output_batch.shape)  # Should print torch.Size([10, 1])
 
-
-# In[28]:
-
-
-file_path = "test_data/compressed12.h5"
+file_path = "/data/wgoh/test_data/compressed12.h5"
 label_name = "reso"
+print("Label: " + label_name)
 hdf5_dataset = wTest(file_path, label_name)
 dataloader = DataLoader(hdf5_dataset, batch_size=10, shuffle=True)
 
-
-# In[29]:
 
 
 label_r = "reso"
@@ -237,25 +147,10 @@ label_x = "cent_fast_train"
 label_y = "cent_slow_train"
 i_img = 0
 
-
-# In[30]:
-
-
-from torch.utils.data import DataLoader
-
 reso_dataloader = DataLoader(hdf5_dataset, batch_size=64, shuffle=True)
 label_r = "reso"
 
-
-# In[31]:
-
-
 hdf5_dataset.plot_image(i_img, label_x, label_y, label_r)
-
-
-# In[32]:
-
-
 train_features, train_labels = next(iter(reso_dataloader))
 print(f"Feature batch shape: {train_features.size()}")
 print(f"Labels batch shape: {train_labels.size()}")
@@ -266,18 +161,10 @@ plt.show()
 print(f"Label: {label}")
 
 
-# In[33]:
 
-
-import torch.optim as optim
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-
-# In[34]:
-
-
 net = Net()
 net.train()
 criterion = nn.MSELoss()  
@@ -320,9 +207,6 @@ print("Output shape:", output.shape)
 print("Output:", output)
 
 
-# In[45]:
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Training script for image dataset.')
     parser.add_argument('--train_h5', type=str, required=True, help='Path to the training HDF5 file.')
@@ -333,13 +217,11 @@ def parse_arguments():
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
     return parser.parse_args()
 
-import torch.optim as optim
-from torch.nn.utils import clip_grad_norm_
 
 class Args:
-    train_h5 = 'path_to_train_h5_file.h5' 
-    val_h5 = 'path_to_val_h5_file.h5' 
-    label_name = ['one_over_reso']
+    train_h5 = 'train_master.hdf5' 
+    val_h5 = 'compressed12.hdf5' 
+    label_name = ['reso']
     epochs = 10
     batch_size = 10
     lr = 0.0001
@@ -423,9 +305,9 @@ print("Training completed")
 epochs = range(1, args.epochs + 1)
 plot_losses(epochs, train_losses, val_losses)
 
+#save_model("FirstTrainFile", net)
+#if args.load_model_name:
+#    net = load_model(args.load_model_name, Net)
 
-# In[ ]:
-
-
-
-
+#results = compute_losses_hdf5(args.val_h5, net, args.label_name, args.batch_size)
+#print(results)
