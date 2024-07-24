@@ -180,7 +180,8 @@ print("Output:", output)
 
 
 total_loss = 0.0
-for i, data in enumerate(dataloader, 0):
+
+""" for i, data in enumerate(dataloader, 0):
     inputs, labels = data
     
     optimizer.zero_grad()
@@ -205,7 +206,7 @@ sample_input = torch.randn(1, 1, 820, 820)
 output = net(sample_input)
 print("Output shape:", output.shape)
 print("Output:", output)
-
+ """
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Training script for image dataset.')
@@ -222,7 +223,7 @@ class Args:
     train_h5 = 'train_master.hdf5' 
     val_h5 = 'compressed12.hdf5' 
     label_name = ['reso']
-    epochs = 10
+    epochs = 100
     batch_size = 10
     lr = 0.0001
 
@@ -267,11 +268,22 @@ print("Starting training")
 train_losses = []
 val_losses = []
 
+from IPython import embed
+#embed()
+dev = "cuda:0"
+net = net.to(dev)
+
+
+#print("Using device", net.device)
+
+save_frequency = 5
+
 for epoch in range(args.epochs):
     net.train()
     train_loss = 0.0
     
     for train_imgs, train_labs in train_loader:
+        train_imgs, train_labs = train_imgs.to(dev), train_labs.to(dev)
         optimizer.zero_grad()
         outputs = net(train_imgs)
         loss_all = criterion(outputs, train_labs)
@@ -289,6 +301,7 @@ for epoch in range(args.epochs):
     val_loss = 0.0
     with torch.no_grad():
         for val_imgs, val_labs in val_loader:
+            val_imgs, val_labs = val_imgs.to(dev), val_labs.to(dev)
             outputs = net(val_imgs)
             loss = criterion(outputs, val_labs)
             val_loss += loss.mean().item()
@@ -299,6 +312,13 @@ for epoch in range(args.epochs):
 
 
     print(f"Epoch {epoch+1} done. train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}")
+
+    if (epoch + 1) % save_frequency == 0:
+        # Load the model100 into the utils load_model to find which validation iamges have the highest and lowest loss. 
+        # Save the training losses and validation losses into a text file, two columns, one for training and second for validation losses.
+        model_path = f"model{epoch + 1}.net"
+        torch.save(net.state_dict(), model_path)
+        print(f"Model saved as {model_path}")
 
 print("Training completed")
 
