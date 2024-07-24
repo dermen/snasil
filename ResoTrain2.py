@@ -265,8 +265,7 @@ def plot_losses(epochs, train_losses, val_losses):
 
 print("Starting training")
 
-train_losses = []
-val_losses = []
+
 
 from IPython import embed
 #embed()
@@ -277,6 +276,9 @@ net = net.to(dev)
 #print("Using device", net.device)
 
 save_frequency = 5
+
+train_losses = []
+val_losses = []
 
 for epoch in range(args.epochs):
     net.train()
@@ -314,18 +316,44 @@ for epoch in range(args.epochs):
     print(f"Epoch {epoch+1} done. train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}")
 
     if (epoch + 1) % save_frequency == 0:
-        # Load the model100 into the utils load_model to find which validation iamges have the highest and lowest loss. 
-        # Save the training losses and validation losses into a text file, two columns, one for training and second for validation losses.
         model_path = f"model{epoch + 1}.net"
         torch.save(net.state_dict(), model_path)
         print(f"Model saved as {model_path}")
+
+# Saves the training losses and validation losses into a text file, 
+# Two columns, one for training and second for validation losses.
+with open("losses.txt", "w") as f:
+    for t_loss, v_loss in zip(train_losses, val_losses):
+        f.write(f"{t_loss}\t{v_loss}\n")
 
 print("Training completed")
 
 epochs = range(1, args.epochs + 1)
 plot_losses(epochs, train_losses, val_losses)
 
-#save_model("FirstTrainFile", net)
+save_model("FirstTrainFile", net)
+
+# Load the saved model for computing losses on validation images.
+model_path = "model100.net"
+net = Net()
+net.load_state_dict(torch.load(model_path))
+net = net.to(dev)
+
+# Compute losses on validation images.
+results = compute_losses_hdf5(args.val_h5, net, "reso", batch_size=args.batch_size)
+results_sorted = sorted(results, key=lambda x: x[1])
+
+# Print the images with the highest and lowest losses.
+print(f"Image with lowest loss: Index {results_sorted[0][0]}, Loss: {results_sorted[0][1]:.4f}")
+print(f"Image with highest loss: Index {results_sorted[-1][0]}, Loss: {results_sorted[-1][1]:.4f}")
+
+# Saves it to a file.
+with open("sorted_validation_losses.txt", "w") as f:
+    for idx, loss in results_sorted:
+        f.write(f"Index: {idx}, Loss: {loss:.4f}\n")
+
+
+
 #if args.load_model_name:
 #    net = load_model(args.load_model_name, Net)
 
