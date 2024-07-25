@@ -136,7 +136,7 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 1)
 
-    def forward(self, input):
+    """def forward(self, input):
         c1 = F.relu(self.conv1(input))
         s2 = F.max_pool2d(c1, (2, 2))
         c3 = F.relu(self.conv2(s2))
@@ -145,7 +145,20 @@ class Net(nn.Module):
         f5 = F.relu(self.fc1(s4))
         f6 = F.relu(self.fc2(f5))
         output = self.fc3(f6)
-        return output
+        return output"""
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        if self.downsample:
+            residual = self.downsample(x)
+        out += residual
+        out = self.relu(out)
+        return out
 
 # Create a model instance
 net = Net()
