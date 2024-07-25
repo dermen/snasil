@@ -266,7 +266,8 @@ output = net(sample_input)
 print(“Output shape:“, output.shape)
 print(“Output:“, output)
 total_loss = 0.0
-“”" for i, data in enumerate(dataloader, 0):
+
+for i, data in enumerate(dataloader, 0):
     inputs, labels = data
     optimizer.zero_grad()
     outputs = net(inputs)
@@ -285,7 +286,7 @@ sample_input = torch.randn(1, 1, 820, 820)
 output = net(sample_input)
 print(“Output shape:“, output.shape)
 print(“Output:“, output)
- “”"
+ 
 def parse_arguments():
     parser = argparse.ArgumentParser(description=‘Training script for image dataset.‘)
     parser.add_argument(‘--train_h5’, type=str, required=True, help=‘Path to the training HDF5 file.‘)
