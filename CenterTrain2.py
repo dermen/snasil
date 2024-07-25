@@ -136,10 +136,8 @@ class arianaTest:
         self.file = h5py.File(h5_file_path, 'r')
         self.labels_names = list(self.file["labels"].attrs["names"])
     
-    # Print available label names and their count
         print(self.labels_names, len(self.labels_names))
     
-    # Check if provided label_name(s) are in the available labels
         if isinstance(label_name, list):
             for name in label_name:
                 if name not in self.labels_names:
@@ -213,152 +211,144 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 2)  
 
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)  
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Training script for image dataset.')
-    parser.add_argument('--train_h5', type=str, required=True, help='Path to the training HDF5 file.')
-    parser.add_argument('--val_h5', type=str, required=True, help='Path to the validation HDF5 file.')
-    parser.add_argument('--label_name', type=str, required=True, help='Name of the label.')
-    parser.add_argument('--epochs', type=int, default=10, help='Number of epochs to train.')
-    parser.add_argument('--batch_size', type=int, default=10, help='Batch size for training.')
-    parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
-    return parser.parse_args()
+    def forward(self, input):
+        c1 = F.relu(self.conv1(input))
+        s2 = F.max_pool2d(c1, (2, 2))
+        c3 = F.relu(self.conv2(s2))
+        s4 = F.max_pool2d(c3, 2)
+        s4 = torch.flatten(s4, 1)
+        f5 = F.relu(self.fc1(s4))
+        f6 = F.relu(self.fc2(f5))
+        output = self.fc3(f6)
+        return output
 
 
-
-# In[27]:
-
-
-file_path = "test_data/compressed12.h5"
-label_name = ["beam_center_fast", "beam_center_slow"]
+# Create a model instance
+net = Net()
+print(net)
+# Test with a single image tensor of shape (1, 1, 820, 820)
+input_tensor_single = torch.randn(1, 1, 820, 820)
+output_single = net(input_tensor_single)
+print(output_single.shape)  # Should print torch.Size([1, 1])
+# Test with a batch of 10 images tensor of shape (10, 1, 820, 820)
+input_tensor_batch = torch.randn(10, 1, 820, 820)
+output_batch = net(input_tensor_batch)
+print(output_batch.shape)  # Should print torch.Size([10, 1])
+file_path = “/data/aamiri/test_data/compressed12.h5”
+label_name = “reso”
+print(“Label: ” + label_name)
 hdf5_dataset = arianaTest(file_path, label_name)
 dataloader = DataLoader(hdf5_dataset, batch_size=10, shuffle=True)
-
-
-# In[28]:
-
-
-print(f"Number of labels: {len(hdf5_dataset)}")
-
-
-# In[29]:
-
-
-i_img = 151
-label_name = "beam_center_fast"
-data = hdf5_dataset.get_data_by_label(i_img, label_name)
-print(f"Data for image {i_img} and label '{label_name}': {data}")
-
-
-# In[30]:
-
-
-label_x = "cent_fast_train"
-label_y = "cent_slow_train"
-x, y = hdf5_dataset.get_xy_data(i_img, label_x, label_y)
-print(f"x data: {x}, y data: {y}")
-
-
-# In[31]:
-
-
-from torch.utils.data import DataLoader
-
+label_r = “reso”
+label_x = “cent_fast_train”
+label_y = “cent_slow_train”
+i_img = 0
 reso_dataloader = DataLoader(hdf5_dataset, batch_size=64, shuffle=True)
-
-label_r = "reso"
+label_r = “reso”
 hdf5_dataset.plot_image(i_img, label_x, label_y, label_r)
-
-
-# In[32]:
-
-
 train_features, train_labels = next(iter(reso_dataloader))
-print(f"Feature batch shape: {train_features.size()}")
-print(f"Labels batch shape: {train_labels.size()}")
+print(f”Feature batch shape: {train_features.size()}“)
+print(f”Labels batch shape: {train_labels.size()}“)
 img = train_features[0].squeeze()
 label = train_labels[0]
-plt.imshow(img ,cmap='gray_r', vmin=0, vmax=20)
+plt.imshow(img ,cmap=‘gray_r’, vmin=0, vmax=20)
 plt.show()
-print(f"Label: {label}")
-
-
-# In[37]:
-
-
-import torch.optim as optim
-from torch.nn.utils import clip_grad_norm_
-
+print(f”Label: {label}“)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+net = Net()
+net.train()
+criterion = nn.MSELoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.9) #optim.adder
+# Test the model with a sample tensor
+sample_input = torch.randn(1, 1, 820, 820)
+output = net(sample_input)
+print(“Output shape:“, output.shape)
+print(“Output:“, output)
+total_loss = 0.0
+“”" for i, data in enumerate(dataloader, 0):
+    inputs, labels = data
+    optimizer.zero_grad()
+    outputs = net(inputs)
+    #from IPython import embed
+    #embed()
+    loss = criterion(outputs, labels)
+    loss.backward()
+    optimizer.step()
+    total_loss += loss.item()
+    print(f’Batch {i+1}, Loss: {loss.item()}’)
+numBatches = len(dataloader)
+total_loss = total_loss / numBatches
+print(‘Finished Training %d’ % numBatches)
+print(‘Total loss after 1 epoch:’, total_loss)
+sample_input = torch.randn(1, 1, 820, 820)
+output = net(sample_input)
+print(“Output shape:“, output.shape)
+print(“Output:“, output)
+ “”"
+def parse_arguments():
+    parser = argparse.ArgumentParser(description=‘Training script for image dataset.‘)
+    parser.add_argument(‘--train_h5’, type=str, required=True, help=‘Path to the training HDF5 file.‘)
+    parser.add_argument(‘--val_h5’, type=str, required=True, help=‘Path to the validation HDF5 file.‘)
+    parser.add_argument(‘--label_name’, type=str, required=True, help=‘Name of the label.‘)
+    parser.add_argument(‘--epochs’, type=int, default=10, help=‘Number of epochs to train.‘)
+    parser.add_argument(‘--batch_size’, type=int, default=10, help=‘Batch size for training.‘)
+    parser.add_argument(‘--lr’, type=float, default=0.001, help=‘Learning rate.’)
+    return parser.parse_args()
 class Args:
-    train_h5 = file_path  
-    val_h5 = file_path  
-    label_name = ['cent_fast_train', 'cent_slow_train'] 
-    epochs = 10
+    train_h5 = ‘train_master.hdf5’
+    val_h5 = ‘compressed12.hdf5’
+    label_name = ['cent_fast_train', 'cent_slow_train']
+    epochs = 100
     batch_size = 10
-    lr = 1e-4
-
+    lr = 0.0001
 args = Args()
-
-# Print training settings
-print(f"Training settings: {args}")
-
+print(f”Training settings: {args}“)
 # Error handling for file paths
 try:
     # Datasets and dataloaders
-    print("Loading datasets")
+    print(“Loading datasets”)
     train_dataset = arianaTest(args.train_h5, args.label_name)
     val_dataset = arianaTest(args.val_h5, args.label_name)
-    print("Datasets loaded successfully")
+    print(“Datasets loaded successfully”)
 except FileNotFoundError as e:
-    print(f"File not found: {e}")
+    print(f”File not found: {e}“)
     raise
 except ValueError as e:
-    print(f"Value error: {e}")
+    print(f”Value error: {e}“)
     raise
-
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-
-# loss function
+# Model, loss function, optimizer
 net = Net()
-criterion = nn.MSELoss(reduction = "none")
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-1)
+criterion = nn.MSELoss()
+optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.09)
 verbose = False
-
 def plot_losses(epochs, train_losses, val_losses):
-    plt.plot(epochs, train_losses, label='Training Loss')
-    plt.plot(epochs, val_losses, label='Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss over Epochs')
+    plt.plot(epochs, train_losses, label=‘Training Loss’)
+    plt.plot(epochs, val_losses, label=‘Validation Loss’)
+    plt.xlabel(‘Epochs’)
+    plt.ylabel(‘Loss’)
+    plt.title(‘Training and Validation Loss over Epochs’)
     plt.legend()
     plt.show()
-
-print("Starting training")
-
+print(“Starting training”)
 train_losses = []
 val_losses = []
-
+from IPython import embed
+#embed()
+dev = “cuda:0"
+net = net.to(dev)
+#print(“Using device”, net.device)
 for epoch in range(args.epochs):
     net.train()
     train_loss = 0.0
-    
     for train_imgs, train_labs in train_loader:
-        
+        train_imgs, train_labs = train_imgs.to(dev), train_labs.to(dev)
         optimizer.zero_grad()
         outputs = net(train_imgs)
         loss_all = criterion(outputs, train_labs)
-        loss = loss_all.mean()
-        #from IPython import embed
-        #embed()
+        loss = criterion(outputs, train_labs)
         loss.backward()
         clip_grad_norm_(net.parameters(), 1e6)
         optimizer.step()
@@ -367,35 +357,26 @@ for epoch in range(args.epochs):
         if verbose:
             print(loss_all)
     train_loss /= len(train_loader)
-
     net.eval()
     val_loss = 0.0
     with torch.no_grad():
         for val_imgs, val_labs in val_loader:
+            val_imgs, val_labs = val_imgs.to(dev), val_labs.to(dev)
             outputs = net(val_imgs)
             loss = criterion(outputs, val_labs)
             val_loss += loss.mean().item()
     val_loss /= len(val_loader)
-
     train_losses.append(train_loss)
     val_losses.append(val_loss)
-
-    print(f"Epoch {epoch+1} done. train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}")
-
-print("Training completed")
-
+    print(f”Epoch {epoch+1} done. train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}“)
+print(“Training completed”)
 epochs = range(1, args.epochs + 1)
 plot_losses(epochs, train_losses, val_losses)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
+#save_model(“FirstTrainFile”, net)
+#if args.load_model_name:
+#    net = load_model(args.load_model_name, Net)
+#results = compute_losses_hdf5(args.val_h5, net, args.label_name, args.batch_size)
+#print(results)
 
 
 
