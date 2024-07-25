@@ -100,7 +100,8 @@ class wTest:
         plt.show()
 
 
-class Net(nn.Module):
+#Our first architecture.
+""" class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 6, 5)
@@ -122,25 +123,69 @@ class Net(nn.Module):
 
 # Create a model instance
 net = Net()
-print(net)
+print(net) """
 
-# Test with a single image tensor of shape (1, 1, 820, 820)
-input_tensor_single = torch.randn(1, 1, 820, 820)
-output_single = net(input_tensor_single)
-print(output_single.shape)  # Should print torch.Size([1, 1])
+#Second Architecture (ResNet)
+class BasicBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(BasicBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_channels != out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
+                nn.BatchNorm2d(out_channels)
+            )
+    
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
 
-# Test with a batch of 10 images tensor of shape (10, 1, 820, 820)
-input_tensor_batch = torch.randn(10, 1, 820, 820)
-output_batch = net(input_tensor_batch)
-print(output_batch.shape)  # Should print torch.Size([10, 1])
+class ResNet(nn.Module):
+    def __init__(self, block, num_blocks, num_classes=1):
+        super(ResNet, self).__init__()
+        self.in_channels = 64
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
+        self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
+        self.linear = nn.Linear(512 * 103 * 103, num_classes)
+    
+    def _make_layer(self, block, out_channels, num_blocks, stride):
+        strides = [stride] + [1] * (num_blocks - 1)
+        layers = []
+        for stride in strides:
+            layers.append(block(self.in_channels, out_channels, stride))
+            self.in_channels = out_channels
+        return nn.Sequential(*layers)
+    
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        out = out.view(out.size(0), -1)
+        out = self.linear(out)
+        return out
+
+def ResNet18():
+    return ResNet(BasicBlock, [2, 2, 2, 2])
+
 
 file_path = "/data/wgoh/test_data/compressed12.h5"
 label_name = "reso"
 print("Label: " + label_name)
 hdf5_dataset = wTest(file_path, label_name)
 dataloader = DataLoader(hdf5_dataset, batch_size=10, shuffle=True)
-
-
 
 label_r = "reso"
 label_x = "cent_fast_train"
@@ -160,53 +205,24 @@ plt.imshow(img ,cmap='gray_r', vmin=0, vmax=20)
 plt.show()
 print(f"Label: {label}")
 
-
-
-
-criterion = nn.CrossEntropyLoss()
+# From the first architecture.
+""" criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 net = Net()
 net.train()
 criterion = nn.MSELoss()  
-optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.9) #optim.adder
+optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.9) #optim.adder """
 
-# Test the model with a sample tensor
+""" # Test the model with a sample tensor
 sample_input = torch.randn(1, 1, 820, 820) 
-output = net(sample_input)
+output = net(sample_input) """
 
 
-print("Output shape:", output.shape)
-print("Output:", output)
-
-
-total_loss = 0.0
-
-""" for i, data in enumerate(dataloader, 0):
-    inputs, labels = data
-    
-    optimizer.zero_grad()
-    outputs = net(inputs)
-
-    #from IPython import embed
-    #embed()
-    
-    loss = criterion(outputs, labels)
-    loss.backward()
-    optimizer.step()
-    
-    total_loss += loss.item()
-    print(f'Batch {i+1}, Loss: {loss.item()}')
-numBatches = len(dataloader)
-total_loss = total_loss / numBatches
-
-print('Finished Training %d' % numBatches)
-print('Total loss after 1 epoch:', total_loss)
-
-sample_input = torch.randn(1, 1, 820, 820)
-output = net(sample_input)
-print("Output shape:", output.shape)
+""" print("Output shape:", output.shape)
 print("Output:", output)
  """
+
+total_loss = 0.0
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Training script for image dataset.')
@@ -248,11 +264,7 @@ except ValueError as e:
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-# Model, loss function, optimizer
-net = Net()
-criterion = nn.MSELoss()
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.09)
-verbose = False
+
 
 def plot_losses(epochs, train_losses, val_losses):
     plt.plot(epochs, train_losses, label='Training Loss')
@@ -263,8 +275,14 @@ def plot_losses(epochs, train_losses, val_losses):
     plt.legend()
     plt.show()
 
-print("Starting training")
 
+# From the first architecture.
+""" # Model, loss function, optimizer
+net = Net()
+criterion = nn.MSELoss()
+optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.09)
+verbose = False
+print("Starting training by first Architecture")
 
 
 from IPython import embed
@@ -276,7 +294,6 @@ net = net.to(dev)
 #print("Using device", net.device)
 
 save_frequency = 5
-
 train_losses = []
 val_losses = []
 
@@ -318,7 +335,62 @@ for epoch in range(args.epochs):
     if (epoch + 1) % save_frequency == 0:
         model_path = f"model{epoch + 1}.net"
         torch.save(net.state_dict(), model_path)
+        print(f"Model saved as {model_path}") """
+
+
+#For the ResNetModel
+net = ResNet18()
+optimizer = optim.Adam(net.parameters(), lr=0.01)
+criterion = nn.MSELoss()
+dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+net.to(dev)
+save_frequency = 5
+train_losses = []
+val_losses = []
+print("Starting training by ResNet")
+
+for epoch in range(args.epochs):
+    net.train()
+    train_loss = 0.0
+    
+    for train_imgs, train_labs in train_loader:
+        train_imgs, train_labs = train_imgs.to(dev), train_labs.to(dev)
+        optimizer.zero_grad()
+        outputs = net(train_imgs)
+        loss = criterion(outputs, train_labs)
+        loss.backward()
+        clip_grad_norm_(net.parameters(), 1e6)
+        optimizer.step()
+        train_loss += loss.item()
+    train_loss /= len(train_loader)
+
+    net.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for val_imgs, val_labs in val_loader:
+            val_imgs, val_labs = val_imgs.to(dev), val_labs.to(dev)
+            outputs = net(val_imgs)
+            loss = criterion(outputs, val_labs)
+            val_loss += loss.item()
+    val_loss /= len(val_loader)
+    
+    train_losses.append(train_loss)
+    val_losses.append(val_loss)
+
+    print(f"Epoch {epoch+1} done. train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}")
+
+    if (epoch + 1) % save_frequency == 0:
+        model_path = f"model{epoch + 1}.net"
+        save_model(model_path, net)
         print(f"Model saved as {model_path}")
+
+# Save the final model
+save_model("FirstTrainFile", net)
+
+# Compute and print losses for the validation images
+results = compute_losses_hdf5(args.val_h5, net, "reso", batch_size=args.batch_size)
+print(results)
+
 
 # Saves the training losses and validation losses into a text file, 
 # Two columns, one for training and second for validation losses.
