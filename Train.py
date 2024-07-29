@@ -48,6 +48,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from utils import save_model, load_model, compute_losses_hdf5
+from utils import wTest, Net
 
 h = h5py.File(args.val_h5,"r")
 
@@ -76,57 +77,6 @@ print("Found %d devices" %torch.cuda.device_count())
 i_img = 0
 labels = list(h['labels'].attrs['names'])
 
-class wTest:
-    def __init__(self, h5_file_path, label_name):
-        self.file = h5py.File(file_path, 'r')
-        self.labels_names = list(self.file["labels"].attrs["names"])
-        print (self.labels_names, len(self.labels_names))
-        self.labels = self.file['labels']
-        self.images = self.file['images']
-        self.label_name = label_name # defined label_name here
-        print (self.labels)
-        
-    def __len__(self):
-        return len(self.labels)
-        
-    def __getitem__(self, index):
-        if index >= len(self):
-            raise IndexError("out of range")
-        img = self.images[index]
-        img = img.reshape(1, 820, 820)  # Add channel dimension
-        img = torch.tensor(img, dtype=torch.float32)  # Convert to tensor
-        lab_index = self.get_labels_index(self.label_name) # find index
-        assert isinstance(lab_index, list)
-        lab = torch.tensor([self.labels[index, i] for i in lab_index], dtype=torch.float32)
-        #else:
-        #lab = torch.tensor(self.labels[index, lab_index], dtype=torch.float32)
-        return img, lab
-        
-    def get_labels_index(self, label_name):
-        if isinstance(label_name, list):
-            return [self.labels_names.index(name) for name in label_name]
-        else:
-            return [self.labels_names.index(label_name)]
-            
-    def get_data_by_label(self, i_img, label_name):
-        label_index = self.get_labels_index(label_name)
-        return self.file['labels'][i_img, label_index][0]
-        
-    def get_xy_data(self, i_img, label_x, label_y):
-        x_idx = self.get_labels_index(label_x)
-        y_idx = self.get_labels_index(label_y)
-        x = self.file['labels'][i_img, x_idx]
-        y = self.file['labels'][i_img, y_idx]
-        return x[0], y[0]
-        
-    def plot_image(self, i_img, label_x, label_y, label_r, vmax=20, cmap='gray_r'):
-        r = self.get_data_by_label(i_img, label_r)
-        x, y = self.get_xy_data(i_img, label_x, label_y)
-        plt.imshow(self.file['images'][i_img], vmax=vmax, cmap=cmap)
-
-        plt.plot(x, y, 'rx', ms = 10)
-        plt.title(f"res={r:.2f}, cent={x:.2f},{y:.2f}")
-        plt.show()
 
 from torchvision.models.resnet import ResNet, BasicBlock, Bottleneck
 from typing import Type, Union, List, Optional, Callable
@@ -363,11 +313,24 @@ except ValueError as e:
     print(f"Value error: {e}")
     raise
 
+#0=a
+
+
+print('Training images', len(train_dataset))
+print('Val images', len(val_dataset))
+
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
 # Model, loss function, optimizer
-net = ResNetCustom()
+if args.model == 'resnet':
+    net = ResNetCustom()
+else:
+    net = Net()
+
+
+
+
 criterion = nn.MSELoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.09)
 verbose = False
@@ -386,21 +349,21 @@ print("Starting training")
 train_losses = []
 val_losses = []
 
-from IPython import embed
+#from IPython import embed
 #embed()
 dev = "cuda:0"
 net = net.to(dev)
 
 
-#print("Using device", net.device)
+print("Using device", dev)
 
 save_frequency = 5
-
+from tqdm import tqdm
 for epoch in range(args.epochs):
     net.train()
     train_loss = 0.0
     
-    for train_imgs, train_labs in train_loader:
+    for train_imgs, train_labs in tqdm(train_loader):
         train_imgs, train_labs = train_imgs.to(dev), train_labs.to(dev)
         optimizer.zero_grad()
         outputs = net(train_imgs)
@@ -409,6 +372,9 @@ for epoch in range(args.epochs):
         loss.backward()
         clip_grad_norm_(net.parameters(), 1e6)
         optimizer.step()
+
+        #from IPython import embed
+        #embed()
         loss_i = loss.item()
         train_loss += loss_i
         if verbose:
