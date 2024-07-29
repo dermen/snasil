@@ -15,7 +15,59 @@ def load_model(model_name, model_class):
     print(f"Model loaded from {model_name}")
     return model
 
-class HDF5Dataset(Dataset):
+class wTest:
+    def __init__(self, h5_file_path, label_name):
+        self.file = h5py.File(h5_file_path, 'r')
+        self.labels_names = list(self.file["labels"].attrs["names"])
+        print (self.labels_names, len(self.labels_names))
+        self.labels = self.file['labels']
+        self.images = self.file['images']
+        self.label_name = label_name # defined label_name here
+        print (self.labels)
+        
+    def __len__(self):
+        return len(self.labels)
+        
+    def __getitem__(self, index):
+        if index >= len(self):
+            raise IndexError("out of range")
+        img = self.images[index]
+        img = img.reshape(1, 820, 820)  # Add channel dimension
+        img = torch.tensor(img, dtype=torch.float32)  # Convert to tensor
+        lab_index = self.get_labels_index(self.label_name) # find index
+        assert isinstance(lab_index, list)
+        lab = torch.tensor([self.labels[index, i] for i in lab_index], dtype=torch.float32)
+        #else:
+        #lab = torch.tensor(self.labels[index, lab_index], dtype=torch.float32)
+        return img, lab
+        
+    def get_labels_index(self, label_name):
+        if isinstance(label_name, list):
+            return [self.labels_names.index(name) for name in label_name]
+        else:
+            return [self.labels_names.index(label_name)]
+            
+    def get_data_by_label(self, i_img, label_name):
+        label_index = self.get_labels_index(label_name)
+        return self.file['labels'][i_img, label_index][0]
+        
+    def get_xy_data(self, i_img, label_x, label_y):
+        x_idx = self.get_labels_index(label_x)
+        y_idx = self.get_labels_index(label_y)
+        x = self.file['labels'][i_img, x_idx]
+        y = self.file['labels'][i_img, y_idx]
+        return x[0], y[0]
+        
+    def plot_image(self, i_img, label_x, label_y, label_r, vmax=20, cmap='gray_r'):
+        r = self.get_data_by_label(i_img, label_r)
+        x, y = self.get_xy_data(i_img, label_x, label_y)
+        plt.imshow(self.file['images'][i_img], vmax=vmax, cmap=cmap)
+
+        plt.plot(x, y, 'rx', ms = 10)
+        plt.title(f"res={r:.2f}, cent={x:.2f},{y:.2f}")
+        plt.show()
+
+""" class HDF5Dataset(Dataset):
     def __init__(self, hdf5_file, label_name):
         self.hdf5_file = hdf5_file
         self.label_name = label_name
@@ -30,11 +82,11 @@ class HDF5Dataset(Dataset):
             img = torch.tensor(f['images'][idx], dtype=torch.float32)
             label = torch.tensor(f[self.label_name][idx], dtype=torch.float32)
         return img, label
-        
+         """
 def compute_losses_hdf5(hdf5_file, model, label_name, batch_size=10):
    
 
-    dataset = HDF5Dataset(hdf5_file, label_name)
+    dataset = wTest(hdf5_file, label_name)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     criterion = nn.MSELoss()
