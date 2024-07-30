@@ -335,14 +335,7 @@ criterion = nn.MSELoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.09)
 verbose = False
 
-def plot_losses(epochs, train_losses, val_losses):
-    plt.plot(epochs, train_losses, label='Training Loss')
-    plt.plot(epochs, val_losses, label='Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss over Epochs')
-    plt.legend()
-    plt.show()
+from plotutils import plot_losses
 
 print("Starting training")
 
