@@ -2,21 +2,6 @@
 # coding: utf-8
 
 
-class Args:
-    train_h5 = 'train_master.hdf5' 
-    val_h5 = 'compressed12.hdf5' 
-    label_name = ['reso']
-    epochs = 100
-    batch_size = 10
-    lr = 0.0001
-
-argsTest = Args()
-
-from args import parse_arguments
-
-args = parse_arguments()
-
-
 
 
 """ def test_args(args1, args2):
@@ -48,7 +33,23 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from utils import save_model, load_model, compute_losses_hdf5
-from utils import wTest, Net
+from utils import wTest, Net, EfficientNet, efficientnet_b0_config
+
+
+class Args:
+    train_h5 = 'train_master.hdf5' 
+    val_h5 = 'compressed12.hdf5' 
+    label_name = ['reso']
+    epochs = 100
+    batch_size = 10
+    lr = 0.0001
+
+argsTest = Args()
+
+from args import parse_arguments
+
+args = parse_arguments()
+
 
 h = h5py.File(args.val_h5,"r")
 
@@ -325,6 +326,12 @@ val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 # Model, loss function, optimizer
 if args.model == 'resnet':
     net = ResNetCustom()
+elif args.model == 'efficientnet':
+    net = EfficientNet(
+        inverted_residual_setting=efficientnet_b0_config(),
+        dropout=0.2,
+        num_classes=1
+    )
 else:
     net = Net()
 
@@ -344,7 +351,7 @@ val_losses = []
 
 #from IPython import embed
 #embed()
-dev = "cuda:0"
+dev = "cuda:0" 
 net = net.to(dev)
 
 
