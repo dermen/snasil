@@ -306,3 +306,55 @@ def _efficientnet_conf(
         raise ValueError(f"Unsupported model type {arch}")
 
     return inverted_residual_setting, last_channel
+
+import torch
+import torch.nn as nn
+
+class MaxVit(nn.Module):
+    def __init__(self, img_size=820, patch_size=16, in_chans=1, num_classes=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0., drop_path_rate=0.):
+        super().__init__()
+        self.num_classes = num_classes
+        self.patch_embed = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+
+        num_patches = (img_size // patch_size) ** 2  # Calculate the number of patches
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))  # Adjust pos_embed size
+        self.pos_drop = nn.Dropout(p=drop_rate)
+        self.blocks = nn.Sequential(
+            *[Block(embed_dim, num_heads, mlp_ratio, qkv_bias, qk_scale, drop_rate, attn_drop_rate, drop_path_rate) for _ in range(depth)]
+        )
+        self.norm = nn.LayerNorm(embed_dim)
+        self.head = nn.Linear(embed_dim, num_classes)  # Output a single value per sample
+
+    def forward(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+        x = x.flatten(2).transpose(1, 2)  # (B, embed_dim, num_patches) -> (B, num_patches, embed_dim)
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = x + self.pos_embed[:, :(x.size(1))]  # Ensure pos_embed matches the input size
+        x = self.pos_drop(x)
+        x = self.blocks(x)
+        x = self.norm(x)
+        cls_token_final = x[:, 0]
+        x = self.head(cls_token_final)
+        return x
+
+class Block(nn.Module):
+    def __init__(self, embed_dim, num_heads, mlp_ratio, qkv_bias, qk_scale, drop_rate, attn_drop_rate, drop_path_rate):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(embed_dim)
+        self.attn = nn.MultiheadAttention(embed_dim, num_heads, dropout=attn_drop_rate, bias=qkv_bias, kdim=embed_dim, vdim=embed_dim)
+        self.drop_path = nn.Identity()  # Placeholder for drop path
+        self.norm2 = nn.LayerNorm(embed_dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(embed_dim, int(embed_dim * mlp_ratio)),
+            nn.GELU(),
+            nn.Linear(int(embed_dim * mlp_ratio), embed_dim),
+            nn.Dropout(drop_rate)
+        )
+
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x), self.norm1(x), self.norm1(x))[0]
+        x = x + self.mlp(self.norm2(x))
+        return x
