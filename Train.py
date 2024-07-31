@@ -329,10 +329,10 @@ else:
     net = Net()
 
 
-
+#add adam optimizer
 
 criterion = nn.MSELoss()
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.09)
+optimizer = torch.optim.Adam(net.parameters(), lr=args.lr, momentum=0.09)
 verbose = False
 
 from plotutils import plot_losses
