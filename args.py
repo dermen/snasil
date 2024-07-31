@@ -10,7 +10,7 @@ def parse_arguments():
     parser.add_argument('--epochs', type=int, default=10, help='Number of epochs to train.')
     parser.add_argument('--batch_size', type=int, default=10, help='Batch size for training.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
-    parser.add_argument('--model', type=str, choices= ['oldschool', 'resnet', 'efficientnet'],default ='resnet', help='Choice of archtecture.')
+    parser.add_argument('--model', type=str, choices= ['oldschool', 'resnet', 'efficientnet', 'maxvit'],default ='resnet', help='Choice of archtecture.')
     parser.add_argument('--momentum', type=float, default=0.0, help='Momentum for optimizer')
     args = parser.parse_args()
     return args

@@ -33,7 +33,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from utils import save_model, load_model, compute_losses_hdf5
-from utils import wTest, Net, EfficientNet, _efficientnet, _efficientnet_conf
+from utils import wTest, Net, EfficientNet, _efficientnet, _efficientnet_conf, MultiAxisAttention, MaxVit, MaxVitBlock
 
 
 class Args:
@@ -336,6 +336,8 @@ elif args.model == 'efficientnet':
         progress=True,
         num_classes=1
     )
+elif args.model == 'maxvit':
+    net = MaxVit()
 else:
     net = Net()
 

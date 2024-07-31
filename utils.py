@@ -134,7 +134,7 @@ class Net(nn.Module):
         return output
 
 
-
+#EfficientNet
 class EfficientNet(nn.Module):
     def __init__(
         self,
