@@ -33,7 +33,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from utils import save_model, load_model, compute_losses_hdf5
-from utils import wTest, Net, EfficientNet, efficientnet_b0_config
+from utils import wTest, Net, EfficientNet, _efficientnet, _efficientnet_conf
 
 
 class Args:
@@ -327,9 +327,13 @@ val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 if args.model == 'resnet':
     net = ResNetCustom()
 elif args.model == 'efficientnet':
-    net = EfficientNet(
-        inverted_residual_setting=efficientnet_b0_config(),
+    inverted_residual_setting, last_channel = _efficientnet_conf('efficientnet_b0', width_mult=1.0, depth_mult=1.0)
+    net = _efficientnet(
+        inverted_residual_setting=inverted_residual_setting,
         dropout=0.2,
+        last_channel=last_channel,
+        weights=None,
+        progress=True,
         num_classes=1
     )
 else:
@@ -339,7 +343,7 @@ else:
 #add adam optimizer
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(net.parameters(), lr=args.lr, momentum=0.09)
+optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
 verbose = False
 
 from plotutils import plot_losses
