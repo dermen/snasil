@@ -346,8 +346,12 @@ else:
 #add adam optimizer
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
+if args.optim == "Adam": 
+    optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
+else:
+    optimizer = optim.SGD(net.parameters(), lr = args.lr, momentum = args.momentum)
 verbose = False
+print("Using Optimizer", optimizer)
 
 from plotutils import plot_losses
 
@@ -358,7 +362,7 @@ val_losses = []
 
 #from IPython import embed
 #embed()
-dev = "cuda:0" 
+dev = "cuda:%d" %args.dev
 net = net.to(dev)
 
 

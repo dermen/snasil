@@ -310,6 +310,7 @@ def _efficientnet_conf(
 import torch
 import torch.nn as nn
 
+#MaxVit from: https://github.com/google-research/maxvit/blob/main/maxvit/models/maxvit.py
 class MaxVit(nn.Module):
     def __init__(self, img_size=820, patch_size=16, in_chans=1, num_classes=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0., drop_path_rate=0.):
         super().__init__()

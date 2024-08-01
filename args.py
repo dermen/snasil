@@ -11,9 +11,11 @@ def parse_arguments():
     parser.add_argument('--batch_size', type=int, default=10, help='Batch size for training.')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
     parser.add_argument('--model', type=str, choices= ['oldschool', 'resnet', 'efficientnet', 'maxvit'],default ='resnet', help='Choice of archtecture.')
+    parser.add_argument('--optim', type=str, choices= ['Adam', 'SGD'], default = 'SGD',help='Optimizer')
     parser.add_argument('--save-dir', type=str, choices= ['/data/wgoh', '/data/aamiri'], help='Base directory to save models')
     parser.add_argument('--folder-name', type=str, required=True, help='Folder name within the save directory')
     parser.add_argument('--momentum', type=float, default=0.0, help='Momentum for optimizer')
+    parser.add_argument('--dev', type=int, choices= [0,1], default =0, help='Device ID')
     args = parser.parse_args()
     return args
 
