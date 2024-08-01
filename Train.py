@@ -34,6 +34,7 @@ from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from utils import save_model, load_model, compute_losses_hdf5
 from utils import wTest, Net, EfficientNet, _efficientnet, _efficientnet_conf, MaxVit
+from torch.optim import Adam
 
 
 class Args:
@@ -363,6 +364,9 @@ net = net.to(dev)
 
 print("Using device", dev)
 
+full_save_dir = os.path.join(args.save_dir, args.folder_name)
+os.makedirs(full_save_dir, exist_ok=True)
+
 save_frequency = 5
 from tqdm import tqdm
 for epoch in range(args.epochs):
@@ -404,11 +408,15 @@ for epoch in range(args.epochs):
     print(f"Epoch {epoch+1} done. train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}")
 
     if (epoch + 1) % save_frequency == 0:
-        # Load the model100 into the utils load_model to find which validation iamges have the highest and lowest loss. 
-        # Save the training losses and validation losses into a text file, two columns, one for training and second for validation losses.
-        model_path = f"model{epoch + 1}.net"
+        model_path = os.path.join(full_save_dir, f"model{epoch + 1}.net")
         torch.save(net.state_dict(), model_path)
         print(f"Model saved as {model_path}")
+
+# Saves the training losses and validation losses into a text file, 
+# Two columns, one for training and second for validation losses.
+with open("losses.txt", "w") as f:
+    for t_loss, v_loss in zip(train_losses, val_losses):
+        f.write(f"{t_loss}\t{v_loss}\n")
 
 print("Training completed")
 
