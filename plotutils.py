@@ -1,12 +1,14 @@
 import pylab as plt
 
-def plot_losses(epochs, train_losses, val_losses):
+def plot_losses(epochs, train_losses, val_losses, log=False):
     plt.plot(epochs, train_losses, label='Training Loss')
     plt.plot(epochs, val_losses, label='Validation Loss')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss over Epochs')
     plt.legend()
+    if log:
+        plt.gca().set_yscale("log")
     plt.show()
 
 def parselog(logfile):
