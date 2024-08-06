@@ -35,6 +35,7 @@ from torch.nn.utils import clip_grad_norm_
 from utils import save_model, load_model, compute_losses_hdf5
 from utils import wTest, Net, EfficientNet, _efficientnet, _efficientnet_conf, MaxVit
 from torch.optim import Adam
+import re
 
 
 class Args:
@@ -51,8 +52,50 @@ from args import parse_arguments
 
 args = parse_arguments()
 
+if args.log_file:
+    print(f"Reading log file: {args.log_file}")
 
-h = h5py.File(args.val_h5,"r")
+    with open(args.log_file, 'r') as file:
+        log_data = file.read()
+
+    print("Log data read successfully.")
+
+    pattern = r"Epoch (\d+) done\. train_loss: ([\d\.]+), val_loss: ([\d\.]+)"
+    epochs = []
+    train_losses = []
+    val_losses = []
+
+    matches = list(re.finditer(pattern, log_data))
+    print(f"Found {len(matches)} matches.")
+
+    for match in re.finditer(pattern, log_data):
+        epochs.append(int(match.group(1)))
+        train_losses.append(float(match.group(2)))
+        val_losses.append(float(match.group(3)))
+
+    if epochs:
+
+        print(f"Epochs: {epochs}")
+        print(f"Train Losses: {train_losses}")
+        print(f"Validation Losses: {val_losses}")
+        
+        # Plot the data
+        plt.figure(figsize=(10, 6))
+        plt.plot(epochs, train_losses, label='Train Loss')
+        plt.plot(epochs, val_losses, label='Validation Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training and Validation Loss Over Epochs')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+    else:
+        print("No matching log data found.")
+
+    exit()
+
+else:
+    h = h5py.File(args.val_h5,"r")
 
 i_img = 0
 
@@ -416,8 +459,6 @@ for epoch in range(args.epochs):
         torch.save(net.state_dict(), model_path)
         print(f"Model saved as {model_path}")
 
-# Saves the training losses and validation losses into a text file, 
-# Two columns, one for training and second for validation losses.
 with open("losses.txt", "w") as f:
     for t_loss, v_loss in zip(train_losses, val_losses):
         f.write(f"{t_loss}\t{v_loss}\n")
@@ -427,9 +468,13 @@ print("Training completed")
 epochs = range(1, args.epochs + 1)
 plot_losses(epochs, train_losses, val_losses)
 
+
+
 #save_model("FirstTrainFile", net)
 #if args.load_model_name:
 #    net = load_model(args.load_model_name, Net)
 
 #results = compute_losses_hdf5(args.val_h5, net, args.label_name, args.batch_size)
 #print(results)
+
+

@@ -16,6 +16,12 @@ def parse_arguments():
     parser.add_argument('--folder-name', type=str, required=True, help='Folder name within the save directory')
     parser.add_argument('--momentum', type=float, default=0.0, help='Momentum for optimizer')
     parser.add_argument('--dev', type=int, choices= [0,1], default =0, help='Device ID')
+    parser.add_argument('--log-file', type=str, help='Path to the log file for plotting.')
     args = parser.parse_args()
+
+    if not args.log_file:
+        if not args.train_h5 or not args.val_h5 or not args.label_name or not args.folder_name:
+            parser.error('--train_h5, --val_h5, --label_name, and --folder-name are required when not using --log-file')
+
     return args
 
