@@ -22,6 +22,7 @@ val_dataset = wTest(args.exptFile, labs)
 
 val_loader = DataLoader(val_dataset, batch_size = 1, shuffle=False)
 
+
 dev = "cpu"
 if args.gpu:
     dev = "cuda:0"
@@ -33,15 +34,17 @@ val_loss = 0.0
 criterion = torch.nn.MSELoss()
 all_cent = []
 all_res = []
+results = []
 with torch.no_grad():
-    for val_imgs, val_labs in val_loader:
+    for i_img, (val_imgs, val_labs) in enumerate(val_loader):
         val_imgs, val_labs = val_imgs.to(dev), val_labs.to(dev)
         outputs = net(val_imgs)
         if args.predictor == "one_over_reso":
             outputs = 1 / outputs
         loss = criterion(outputs, val_labs)
-        val_loss += loss.mean().item()
-        print(outputs)
+        loss_i = loss.mean().item()
+        val_loss += loss_i 
+        print(f"Img {i_img} prediction:", outputs)
 
         if dev.startswith("cuda"):
             outputs = outputs.cpu()
@@ -52,10 +55,16 @@ with torch.no_grad():
         else:
             r, = outputs.numpy().ravel()
             all_res.append(r)
-            
+        results.append( (i_img, np.round(loss_i,5)))
+
+results = sorted(results, key=lambda x: x[1]) 
+print("Lowest loss images:", results[:5])
+print("Highest loss images:", results[-5:])
+
 if args.predictor=="cent":
-    print("Results:", np.mean(all_cent,0), np.std(all_cent,0))
+    print(f"Average {args.predictor} over images:", np.mean(all_cent,0), np.std(all_cent,0))
 else:
-    print("Results:", np.mean(all_res), np.std(all_res))
+    print(f"Average {args.predictor} over images:", np.mean(all_res), np.std(all_res))
 val_loss /= len(val_loader)
-print(val_loss)
+print("Avergae MSE Loss for images:", val_loss)
+
