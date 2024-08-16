@@ -71,12 +71,20 @@ class wTest:
         
     def plot_image(self, i_img, label_x, label_y, label_r, vmax=20, cmap='gray_r'):
         r = self.get_data_by_label(i_img, label_r)
-        x, y = self.get_xy_data(i_img, label_x, label_y)
+        x = y = None
+        try:
+            x, y = self.get_xy_data(i_img, label_x, label_y)
+        except Exception as err:
+            print(err)
+            pass
         import pylab as plt
         plt.imshow(self.file['images'][i_img], vmax=vmax, cmap=cmap)
 
-        plt.plot(x, y, 'rx', ms = 10)
-        plt.title(f"res={r:.2f}, cent={x:.2f},{y:.2f}")
+        if x is not None:
+            plt.plot(x, y, 'rx', ms = 10)
+            plt.title(f"res={r:.2f}, cent={x:.2f},{y:.2f}")
+        else:
+            plt.title(f"res={r:.2f}")
         plt.show()
 
 """ class HDF5Dataset(Dataset):
