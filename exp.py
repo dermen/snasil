@@ -40,13 +40,14 @@ with torch.no_grad():
         loss = criterion(outputs, val_labs)
         val_loss += loss.mean().item()
         print(outputs)
+        if args.predictor == "one_over_reso":
+            outputs = 1 / outputs
+
         if args.predictor == "cent":
             x,y = outputs.numpy().ravel()
             all_cent.append((x,y))
         else:
             r, = outputs.numpy().ravel()
-            if args.predictor == "one_over_reso":
-                r = 1/r
             all_res.append(r)
             
 if args.predictor=="cent":
