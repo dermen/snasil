@@ -18,7 +18,7 @@ if args.predictor == "cent":
     labs = ["cent_fast_train", "cent_slow_train"]
 else:
     labs = ["reso"]
-val_dataset = wTest(args.exptFIle, labs)
+val_dataset = wTest(args.exptFile, labs)
 
 val_loader = DataLoader(val_dataset, batch_size = 1, shuffle=False)
 
