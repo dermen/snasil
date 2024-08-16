@@ -39,9 +39,9 @@ with torch.no_grad():
         outputs = net(val_imgs)
         loss = criterion(outputs, val_labs)
         val_loss += loss.mean().item()
-        print(outputs)
         if args.predictor == "one_over_reso":
             outputs = 1 / outputs
+        print(outputs)
 
         if args.predictor == "cent":
             x,y = outputs.numpy().ravel()
