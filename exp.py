@@ -24,7 +24,7 @@ val_loader = DataLoader(val_dataset, batch_size = 1, shuffle=False)
 
 dev = "cpu"
 if args.gpu:
-    dev = "gpu"
+    dev = "cuda:0"
 net = ResNetCustom(num_classes=len(labs))
 net.load_state_dict(torch.load(args.modelPath, map_location=torch.device(dev)))
 net = net.to(dev)
