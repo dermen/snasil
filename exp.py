@@ -37,10 +37,10 @@ with torch.no_grad():
     for val_imgs, val_labs in val_loader:
         val_imgs, val_labs = val_imgs.to(dev), val_labs.to(dev)
         outputs = net(val_imgs)
-        loss = criterion(outputs, val_labs)
-        val_loss += loss.mean().item()
         if args.predictor == "one_over_reso":
             outputs = 1 / outputs
+        loss = criterion(outputs, val_labs)
+        val_loss += loss.mean().item()
         print(outputs)
 
         if args.predictor == "cent":
