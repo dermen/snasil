@@ -45,7 +45,7 @@ with torch.no_grad():
             all_cent.append((x,y))
         else:
             r, = outputs.numpy().ravel()
-            if args.predcitor == "one_over_reso":
+            if args.predictor == "one_over_reso":
                 r = 1/r
             all_res.append(r)
             
