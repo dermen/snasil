@@ -43,6 +43,9 @@ with torch.no_grad():
         val_loss += loss.mean().item()
         print(outputs)
 
+        if dev.startswith("cuda"):
+            outputs = outputs.cpu()
+
         if args.predictor == "cent":
             x,y = outputs.numpy().ravel()
             all_cent.append((x,y))
