@@ -26,8 +26,8 @@ dev = "cpu"
 if args.gpu:
     dev = "gpu"
 net = ResNetCustom(num_classes=2)
-net.load_state_dict(torch.load(args.modelPath, map_location=torch.device(args.dev)))
-net = net.to(args.dev)
+net.load_state_dict(torch.load(args.modelPath, map_location=torch.device(dev)))
+net = net.to(dev)
 net.eval()
 val_loss = 0.0
 criterion = torch.nn.MSELoss()
