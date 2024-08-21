@@ -4,8 +4,11 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 from utils import ResNetCustom
 import sys
+import time
 
 from argparse import ArgumentParser
+
+start_time = time.time()
 
 pa = ArgumentParser()
 pa.add_argument("exptFile", type=str, help="path to the exeriment h5 file")
@@ -35,10 +38,14 @@ criterion = torch.nn.MSELoss()
 all_cent = []
 all_res = []
 results = []
+times = []
 with torch.no_grad():
     for i_img, (val_imgs, val_labs) in enumerate(val_loader):
+        t1 = time.time()
         val_imgs, val_labs = val_imgs.to(dev), val_labs.to(dev)
         outputs = net(val_imgs)
+        t2 = time.time()
+        times.append(t2 - t1)
         if args.predictor == "one_over_reso":
             outputs = 1 / outputs
         loss = criterion(outputs, val_labs)
@@ -57,6 +64,14 @@ with torch.no_grad():
             all_res.append(r)
         results.append( (i_img, np.round(loss_i,5)))
 
+    std_dev = np.std(times, ddof =1)
+    median_val = np.median(times)
+
+    print(f"Standard Deviation: {std_dev}")
+    print(f"Median: {median_val}")
+
+    
+
 results = sorted(results, key=lambda x: x[1]) 
 print("Lowest loss images:", results[:5])
 print("Highest loss images:", results[-5:])
@@ -67,4 +82,9 @@ else:
     print(f"Average {args.predictor} over images:", np.mean(all_res), np.std(all_res))
 val_loss /= len(val_loader)
 print("Avergae MSE Loss for images:", val_loss)
+
+end_time = time.time()
+
+total_time = end_time - start_time
+print(f"Total time: {total_time:.2f} seconds")
 
