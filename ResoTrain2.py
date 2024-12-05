@@ -2,6 +2,7 @@
 # coding: utf-8
 
 
+print("Nice!!")
 import h5py
 import pylab as plt
 import torch
@@ -241,7 +242,7 @@ class Args:
     label_name = ['reso']
     epochs = 100
     batch_size = 10
-    lr = 0.0001
+    lr = 1e-3
 
 args = Args()
 
